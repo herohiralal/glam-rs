@@ -838,6 +838,35 @@ macro_rules! impl_vec2_float_tests {
             assert_approx_eq!(v1, v0.move_towards(v1, v0.distance(v1) + 1.0));
         });
 
+        glam_test!(test_rotate_towards, {
+            use core::$t::consts::{FRAC_PI_2, FRAC_PI_4};
+            let eps = 10.0 * $t::EPSILON as f32;
+
+            // Setup such that `v0` is `PI/2` and `-PI/2` radians away from `v1` and `v2` respectively.
+            let v0 = $vec2::new(1.0, 0.0);
+            let v1 = $vec2::new(0.0, -1.0);
+            let v2 = $vec2::new(0.0, 1.0);
+
+            // Positive delta
+            assert_approx_eq!(v0, v0.rotate_towards(v1, 0.0), eps);
+            assert_approx_eq!(
+                $vec2::new($t::sqrt(2.0) / 2.0, -$t::sqrt(2.0) / 2.0),
+                v0.rotate_towards(v1, FRAC_PI_4),
+                eps
+            );
+            assert_approx_eq!(v1, v0.rotate_towards(v1, FRAC_PI_2), eps);
+            assert_approx_eq!(v1, v0.rotate_towards(v1, FRAC_PI_2 * 1.5), eps);
+
+            // Negative delta
+            assert_approx_eq!(
+                $vec2::new($t::sqrt(2.0) / 2.0, $t::sqrt(2.0) / 2.0),
+                v0.rotate_towards(v1, -FRAC_PI_4),
+                eps
+            );
+            assert_approx_eq!(v2, v0.rotate_towards(v1, -FRAC_PI_2), eps);
+            assert_approx_eq!(v2, v0.rotate_towards(v1, -FRAC_PI_2 * 1.5), eps);
+        });
+
         glam_test!(test_midpoint, {
             let v0 = $vec2::new(-1.0, -1.0);
             let v1 = $vec2::new(1.0, 1.0);
@@ -868,15 +897,22 @@ macro_rules! impl_vec2_float_tests {
             );
         });
 
-        glam_test!(test_angle_between, {
-            let angle = $vec2::new(1.0, 0.0).angle_between($vec2::new(0.0, 1.0));
+        glam_test!(test_angle_to, {
+            let angle = $vec2::new(1.0, 0.0).angle_to($vec2::new(0.0, 1.0));
             assert_approx_eq!(core::$t::consts::FRAC_PI_2, angle, 1e-6);
 
-            let angle = $vec2::new(10.0, 0.0).angle_between($vec2::new(0.0, 5.0));
+            let angle = $vec2::new(10.0, 0.0).angle_to($vec2::new(0.0, 5.0));
             assert_approx_eq!(core::$t::consts::FRAC_PI_2, angle, 1e-6);
 
-            let angle = $vec2::new(-1.0, 0.0).angle_between($vec2::new(0.0, 1.0));
+            let angle = $vec2::new(-1.0, 0.0).angle_to($vec2::new(0.0, 1.0));
             assert_approx_eq!(-core::$t::consts::FRAC_PI_2, angle, 1e-6);
+
+            // the angle returned by angle_to should rotate the input vector to the
+            // destination vector
+            assert_approx_eq!(
+                $vec2::from_angle($vec2::X.angle_to($vec2::Y)).rotate($vec2::X),
+                $vec2::Y
+            );
         });
 
         glam_test!(test_clamp_length, {
@@ -964,6 +1000,22 @@ macro_rules! impl_vec2_float_tests {
             let vec = $vec2::from_angle(angle);
             assert_approx_eq!(vec, $vec2::new(0.0, -1.0));
             assert_approx_eq!(vec.to_angle(), angle);
+        });
+
+        glam_test!(test_reflect, {
+            let incident = $vec2::new(1.0, -1.0);
+            let normal = $vec2::Y;
+            assert_approx_eq!(incident.reflect(normal), $vec2::ONE);
+        });
+
+        glam_test!(test_refract, {
+            let incident = $vec2::NEG_ONE.normalize();
+            let normal = $vec2::ONE.normalize();
+            assert_approx_eq!(incident.refract(normal, 0.5), incident);
+
+            let incident = $vec2::new(1.0, -1.0).normalize();
+            let normal = $vec2::Y;
+            assert_approx_eq!(incident.refract(normal, 1.5), $vec2::ZERO);
         });
     };
 }

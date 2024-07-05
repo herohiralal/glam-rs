@@ -1098,6 +1098,22 @@ macro_rules! impl_vec3_float_tests {
             let a = $vec3::new(1.0, 2.0, 3.0);
             assert_eq!(format!("{:.2}", a), "[1.00, 2.00, 3.00]");
         });
+
+        glam_test!(test_reflect, {
+            let incident = $vec3::new(1.0, -1.0, 1.0);
+            let normal = $vec3::Y;
+            assert_approx_eq!(incident.reflect(normal), $vec3::ONE);
+        });
+
+        glam_test!(test_refract, {
+            let incident = $vec3::NEG_ONE.normalize();
+            let normal = $vec3::ONE.normalize();
+            assert_approx_eq!(incident.refract(normal, 0.5), incident);
+
+            let incident = $vec3::new(1.0, -1.0, 0.0).normalize();
+            let normal = $vec3::Y;
+            assert_approx_eq!(incident.refract(normal, 1.5), $vec3::ZERO);
+        });
     };
 }
 
@@ -1462,7 +1478,7 @@ mod vec3a {
     glam_test!(test_mask_align16, {
         // make sure the unused 'w' value doesn't break Vec3Ab behaviour
         let a = Vec4::ZERO;
-        let mut b = Vec3A::from(a);
+        let mut b = Vec3A::from_vec4(a);
         b.x = 1.0;
         b.y = 1.0;
         b.z = 1.0;
@@ -1508,9 +1524,9 @@ mod vec3a {
 
     glam_test!(test_min_max_from_vec4, {
         // checks that the 4th element is unused.
-        let v1 = Vec3A::from(Vec4::new(1.0, 2.0, 3.0, 4.0));
+        let v1 = Vec3A::from_vec4(Vec4::new(1.0, 2.0, 3.0, 4.0));
         assert_eq!(v1.max_element(), 3.0);
-        let v2 = Vec3A::from(Vec4::new(4.0, 3.0, 2.0, 1.0));
+        let v2 = Vec3A::from_vec4(Vec4::new(4.0, 3.0, 2.0, 1.0));
         assert_eq!(v2.min_element(), 2.0);
     });
 

@@ -540,6 +540,29 @@ impl DQuat {
         math::acos_approx(math::abs(self.dot(rhs))) * 2.0
     }
 
+    /// Rotates towards `rhs` up to `max_angle` (in radians).
+    ///
+    /// When `max_angle` is `0.0`, the result will be equal to `self`. When `max_angle` is equal to
+    /// `self.angle_between(rhs)`, the result will be equal to `rhs`. If `max_angle` is negative,
+    /// rotates towards the exact opposite of `rhs`. Will not go past the target.
+    ///
+    /// Both quaternions must be normalized.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if `self` or `rhs` are not normalized when `glam_assert` is enabled.
+    #[inline]
+    #[must_use]
+    pub fn rotate_towards(&self, rhs: Self, max_angle: f64) -> Self {
+        glam_assert!(self.is_normalized() && rhs.is_normalized());
+        let angle = self.angle_between(rhs);
+        if angle <= 1e-4 {
+            return *self;
+        }
+        let s = (max_angle / angle).clamp(-1.0, 1.0);
+        self.slerp(rhs, s)
+    }
+
     /// Returns true if the absolute difference of all elements between `self` and `rhs`
     /// is less than or equal to `max_abs_diff`.
     ///
@@ -680,13 +703,6 @@ impl DQuat {
     #[must_use]
     pub fn as_quat(self) -> Quat {
         Quat::from_xyzw(self.x as f32, self.y as f32, self.z as f32, self.w as f32)
-    }
-
-    #[inline]
-    #[must_use]
-    #[deprecated(since = "0.24.2", note = "Use as_quat() instead")]
-    pub fn as_f32(self) -> Quat {
-        self.as_quat()
     }
 }
 
